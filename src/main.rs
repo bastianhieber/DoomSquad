@@ -12,6 +12,7 @@ use crate::render::{RendererData, render_init};
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
 use std::f64::consts::PI;
 use std::time::Instant;
+use std::fs;
 
 const SCREEN_WIDTH: usize = 800;
 const SCREEN_HEIGHT: usize = 450;
@@ -56,6 +57,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let mut game = game::Game::new_game(&renderer_data).unwrap();
+
+    
+    
     let mut audio = Audio::init();
     let mut menu = Menu::new();
 
@@ -72,6 +76,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 } else {
                     app_state = menu.update_and_draw_start_menu(
+                        &mut window,
+                        &mut buffer,
+                        &mut game,
+                        &renderer_data,
+                        &mut audio,
+                    );
+                }
+            }
+
+             AppState::ControlsMenu => {
+                window.set_cursor_visibility(true);
+
+                if escape_clicked {
+                    app_state= AppState::StartScreen;
+                } else {
+                    app_state = menu.update_and_draw_controls_menu(
                         &mut window,
                         &mut buffer,
                         &mut game,

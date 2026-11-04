@@ -22,6 +22,18 @@ use crate::{
 use minifb::{Key, KeyRepeat, MouseButton, MouseMode, Window};
 use std::f64::consts::PI;
 
+
+//added for controls update -------------------------------------------------------------------------------
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+
+
 const ROTATION_SPEED_MOUSE: f64 = 2.0;
 const ROTATION_SPEED_KEYS: f64 = 0.15;
 pub const MOVE_SPEED: f64 = 3.0;
@@ -52,15 +64,49 @@ const MOUSE_SENSE_X: f64 = 0.003;
 const MOUSE_SENSE_Y: f64 = 0.003;
 const AIM_MODE_SLOWDOWN: f64 = 0.1;
 const MOUSE_ENABLED: bool = false;
+const ALL_KEYS: &[Key] = &[
+    Key::Key0, Key::Key1, Key::Key2, Key::Key3, Key::Key4,
+    Key::Key5, Key::Key6, Key::Key7, Key::Key8, Key::Key9,
+    Key::A, Key::B, Key::C, Key::D, Key::E, Key::F, Key::G,
+    Key::H, Key::I, Key::J, Key::K, Key::L, Key::M, Key::N,
+    Key::O, Key::P, Key::Q, Key::R, Key::S, Key::T, Key::U,
+    Key::V, Key::W, Key::X, Key::Y, Key::Z,
+    Key::F1, Key::F2, Key::F3, Key::F4, Key::F5, Key::F6,
+    Key::F7, Key::F8, Key::F9, Key::F10, Key::F11, Key::F12,
+    Key::Down, Key::Left, Key::Right, Key::Up,
+    Key::Apostrophe, Key::Backquote, Key::Backslash, Key::Comma,
+    Key::Equal, Key::LeftBracket, Key::Minus, Key::Period,
+    Key::RightBracket, Key::Semicolon, Key::Slash,
+    Key::Backspace, Key::Delete, Key::End, Key::Enter, Key::Escape,
+    Key::Home, Key::Insert, Key::Menu, Key::PageDown, Key::PageUp,
+    Key::Pause, Key::Space, Key::Tab,
+    Key::NumLock, Key::CapsLock, Key::ScrollLock,
+    Key::LeftShift, Key::RightShift, Key::LeftCtrl, Key::RightCtrl,
+    Key::LeftAlt, Key::RightAlt,
+    Key::NumPad0, Key::NumPad1, Key::NumPad2, Key::NumPad3, Key::NumPad4,
+    Key::NumPad5, Key::NumPad6, Key::NumPad7, Key::NumPad8, Key::NumPad9,
+    Key::NumPadDot, Key::NumPadSlash, Key::NumPadAsterisk,
+    Key::NumPadMinus, Key::NumPadPlus, Key::NumPadEnter,
+];
+
+
+fn key_from_str(s: &str) -> Option<Key> {
+    ALL_KEYS
+        .iter()
+        .copied()
+        .find(|k| format!("{:?}", k) == s)
+}
+
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum LastInputDirection {
-    W,
-    A,
-    S,
-    D,
+    Forward,
+    Left,
+    Backward,
+    Right,
     No,
 }
+
 #[derive(Clone)]
 pub struct Player {
     pub mover: Mover,
@@ -87,7 +133,113 @@ pub struct Player {
     pub jumping_allowed_timer: i32,
     pub vertcal_aim: f64,
     pub aim_mode: bool,
+    pub keys: PlayerKeys,
+
+    //added for controls update -------------------------------------------------------------------------------
+    
 }
+
+#[derive(Clone, Copy)]
+pub struct PlayerKeys {
+    pub forward_key: Key,
+    pub backward_key: Key,
+    pub left_key: Key,
+    pub right_key: Key,
+    pub sprint_key: Key,
+    pub jump_key: Key,
+    pub crouch_key: Key,
+    pub rocket_jump_key: Key,
+    pub interact_key: Key,
+    pub move_aim_up_key: Key,
+    pub move_aim_down_key: Key,
+    pub turn_left_key: Key,
+    pub turn_right_key: Key,
+    pub fine_aiming_key: Key,
+    pub fire_bullet_key: Key,
+    pub fire_arrow_key: Key,
+    pub god_mode_key: Key,
+    pub lock_all_key: Key,
+    pub escape_key: Key,
+    }
+
+impl PlayerKeys {
+    pub fn new() -> Self {
+        Self {
+            forward_key: Key::W,
+            backward_key: Key::S,
+            left_key: Key::A,
+            right_key: Key::D,
+            sprint_key: Key::LeftShift,
+            jump_key: Key::Space,
+            crouch_key: Key::C,
+            rocket_jump_key: Key::R,
+            interact_key: Key::F,
+            move_aim_up_key: Key::Up,
+            move_aim_down_key: Key::Down,
+            turn_left_key: Key::Left,
+            turn_right_key: Key::Right,
+            fine_aiming_key: Key::E,
+            fire_bullet_key: Key::RightCtrl,
+            fire_arrow_key: Key::RightShift,
+            god_mode_key: Key::G,
+            lock_all_key: Key::L, 
+            escape_key: Key::Escape,
+        }
+    }
+     pub fn load() -> Self {
+        let mut keys = Self::new();
+        if let Ok(contents) = std::fs::read_to_string("controls.txt") {
+            for line in contents.lines() {
+                if let Some((name, value)) = line.split_once('=') {
+                    if let Some(key) = key_from_str(value.trim()) {
+                        match name.trim() {
+                            "forward" => keys.forward_key = key,
+                            "backward" => keys.backward_key = key,
+                            "left" => keys.left_key = key,
+                            "right" => keys.right_key = key,
+                            "sprint" => keys.sprint_key = key,
+                            "jump" => keys.jump_key = key,
+                            "crouch" => keys.crouch_key = key,
+                            "rocket_jump" => keys.rocket_jump_key = key,
+                            "interact" => keys.interact_key = key,
+                            "move_aim_up" => keys.move_aim_up_key = key,
+                            "move_aim_down" => keys.move_aim_down_key = key,
+                            "turn_left" => keys.turn_left_key = key,
+                            "turn_right" => keys.turn_right_key = key,
+                            "fine_aiming" => keys.fine_aiming_key = key,
+                            "fire_bullet" => keys.fire_bullet_key = key,
+                            "fire_arrow" => keys.fire_arrow_key = key,
+                            "god_mode" => keys.god_mode_key = key,
+                            "lock_all" => keys.lock_all_key = key,
+                            "escape" => keys.escape_key = key,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+        keys
+    }
+
+    pub fn save(&self) {
+        let text = format!(
+            "forward={:?}\nbackward={:?}\nleft={:?}\nright={:?}\n\
+             sprint={:?}\njump={:?}\ncrouch={:?}\nrocket_jump={:?}\n\
+             interact={:?}\nmove_aim_up={:?}\nmove_aim_down={:?}\n\
+             turn_left={:?}\nturn_right={:?}\nfine_aiming={:?}\n\
+             fire_bullet={:?}\nfire_arrow={:?}\ngod_mode={:?}\n\
+             lock_all={:?}\nescape={:?}\n",
+            self.forward_key, self.backward_key, self.left_key, self.right_key,
+            self.sprint_key, self.jump_key, self.crouch_key, self.rocket_jump_key,
+            self.interact_key, self.move_aim_up_key, self.move_aim_down_key,
+            self.turn_left_key, self.turn_right_key, self.fine_aiming_key,
+            self.fire_bullet_key, self.fire_arrow_key, self.god_mode_key,
+            self.lock_all_key, self.escape_key,
+        );
+        let _ = std::fs::write("controls.txt", text);
+    }
+}
+
 
 impl Player {
     pub fn new() -> Self {
@@ -124,6 +276,8 @@ impl Player {
             jumping_allowed_timer: 0,
             vertcal_aim: 0.0,
             aim_mode: false,
+
+            keys: PlayerKeys::load()
         }
     }
 
@@ -161,8 +315,19 @@ impl Player {
             bullet_cooldown: 0,
             vertcal_aim: 0.0,
             aim_mode: false,
+            keys: PlayerKeys ::load()
+            }
+           
+            
+           
+            
+
+
+         
+            
         }
-    }
+    
+    
 
     //updates every tick
     pub fn update(
@@ -234,6 +399,9 @@ impl Player {
             self.arrow_cooldown -= 1;
         }
 
+        if (window.is_key_pressed(Key::L, KeyRepeat::No)){
+            self.keys.forward_key = Key::O;
+        }
         //mouse movement and shooting
         //f32 cause window.get_mouse_pos gives us f32
         if let Some((mx, my)) = window.get_mouse_pos(MouseMode::Pass)
@@ -287,33 +455,33 @@ impl Player {
         }
 
         let mut step_successful: bool = false;
-
-        if (window.is_key_down(Key::W)
-            && ((!self.is_sliding && !self.is_jumping) || self.last_input == W))
-            || (self.is_jumping && (self.last_input == W))
+//_________________________________________________________________________________________________________________________________________________________________________________
+        if (window.is_key_down(self.keys.forward_key)
+            && ((!self.is_sliding && !self.is_jumping) || self.last_input == Forward))
+            || (self.is_jumping && (self.last_input == Forward))
         {
             step_successful = self.mover.step(self.move_speed, 0.0, map, self.godmode);
         }
-        if (window.is_key_down(Key::A)
-            && ((!self.is_sliding && !self.is_jumping) || self.last_input == A))
-            || (self.is_jumping && (self.last_input == A))
+        if (window.is_key_down(self.keys.left_key)
+            && ((!self.is_sliding && !self.is_jumping) || self.last_input == Left))
+            || (self.is_jumping && (self.last_input == Left))
         {
             step_successful = self
                 .mover
                 .step(self.move_speed, -PI / 2.0, map, self.godmode);
         }
-        if (window.is_key_down(Key::D)
-            && ((!self.is_sliding && !self.is_jumping) || self.last_input == D))
-            || (self.is_jumping && (self.last_input == D))
+        if (window.is_key_down(self.keys.right_key)
+            && ((!self.is_sliding && !self.is_jumping) || self.last_input == Right))
+            || (self.is_jumping && (self.last_input == Right))
         {
             step_successful = self
                 .mover
                 .step(self.move_speed, PI / 2.0, map, self.godmode);
         }
 
-        if (window.is_key_down(Key::S)
-            && ((!self.is_sliding && !self.is_jumping) || self.last_input == S))
-            || (self.is_jumping && (self.last_input == S))
+        if (window.is_key_down(self.keys.backward_key)
+            && ((!self.is_sliding && !self.is_jumping) || self.last_input == Backward))
+            || (self.is_jumping && (self.last_input == Backward))
         {
             step_successful = self.mover.step(self.move_speed, PI, map, self.godmode);
         }
@@ -327,7 +495,7 @@ impl Player {
             audio.play_step(1.0);
         }
 
-        //god mode controls (not relevant for user)
+        //god mode controls (not relevant for user)-------------------------------------------------------------------------------------------
         if window.is_key_down(Key::Space) && self.godmode {
             self.mover.foot_level += FLY_UP_DOWN_SPEED;
         }
@@ -547,20 +715,23 @@ impl Player {
         events
     }
 
+   
+
     fn save_input(&mut self, window: &Window) {
-        if window.is_key_down(Key::D) {
-            self.last_input = D;
-        } else if window.is_key_down(Key::A) {
-            self.last_input = A;
-        } else if window.is_key_down(Key::S) {
-            self.last_input = S;
-        } else if window.is_key_down(Key::W) {
-            self.last_input = W;
+        if window.is_key_down(self.keys.right_key) {
+            self.last_input = Right;
+        } else if window.is_key_down(self.keys.left_key) {
+            self.last_input = Left;
+        } else if window.is_key_down(self.keys.backward_key) {
+            self.last_input = Backward;
+        } else if window.is_key_down(self.keys.forward_key) {
+            self.last_input = Forward;
         } else {
             self.last_input = No
         }
     }
-
+    
+    
     fn check_angle(&mut self) {
         if self.mover.facing_direction < 0.1 {
             self.mover.facing_direction += 2.0 * PI
